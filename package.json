@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "docker run -v /Users/patarapolw/projects/cjrelate/packages/server:/server cjrelate node test.js",
+    "build": "docker build -t cjrelate ."
   },
   "keywords": [
     "chinese",
