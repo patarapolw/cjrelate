@@ -1,0 +1,23 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/mongoose": "^5.7.14",
+    "@types/node": "^13.13.4",
+    "log-buffer": "0.0.3",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@typegoose/typegoose": "^7.0.0",
+    "csv-parser": "^2.3.2",
+    "mongoose": "^5.9.10"
+  }
+}
