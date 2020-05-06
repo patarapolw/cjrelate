@@ -1,25 +1,11 @@
-import { getModelForClass, prop, index } from '@typegoose/typegoose'
+import { getModelForClass, prop } from '@typegoose/typegoose'
 
-class DbSentence {
-  @prop() _id!: number
-  @prop({ required: true }) lang!: string
+class Sentence {
+  @prop({ unique: true, sparse: true }) tatoebaId?: number
+  @prop({ required: true, index: true }) lang!: string
   @prop({ required: true }) text!: string
+  @prop({ default: () => [], index: true }) translationIds!: number[]
+  @prop({ default: () => [], index: true }) tags!: string[]
 }
 
-export const DbSentenceModel = getModelForClass(DbSentence, { schemaOptions: { collection: 'sentence' } })
-
-@index({ sentenceId: 1, translationId: 1 }, { unique: true })
-class DbTranslation {
-  @prop() sentenceId!: number
-  @prop() translationId!: number
-}
-
-export const DbTranslationModel = getModelForClass(DbTranslation, { schemaOptions: { collection: 'translation' } })
-
-@index({ sentenceId: 1, tagName: 1 }, { unique: true })
-class DbSentenceTag {
-  @prop() sentenceId!: number
-  @prop() tagName!: string
-}
-
-export const DbSentenceTagModel = getModelForClass(DbSentenceTag, { schemaOptions: { collection: 'sentenceTag' } })
+export const SentenceModel = getModelForClass(Sentence, { schemaOptions: { collection: 'sentence' } })
