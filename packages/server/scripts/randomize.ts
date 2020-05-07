@@ -30,6 +30,9 @@ async function main () {
 
   console.log(r)
 
+  console.log(await SentenceModel.countDocuments({ lang: 'cmn' }))
+  console.log(await SentenceModel.countDocuments({ lang: 'jpn' }))
+
   mongoose.disconnect()
 }
 
