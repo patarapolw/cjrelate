@@ -1,25 +1,42 @@
 import sqlite3 from 'better-sqlite3'
-import { mongoose } from '@typegoose/typegoose'
-import { SentenceModel } from '../src/db/mongo'
 
 async function main () {
-  await mongoose.connect(process.env.MONGO_URI!, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-  })
+  const newDb = sqlite3('assets/tatoeba.db')
+  newDb.exec(/*sql*/`
+  CREATE TABLE sentence (
+    id      INTEGER PRIMARY KEY,
+    [text]  TEXT NOT NULL,
+    lang    TEXT NOT NULL,
+    tags    TEXT -- json
+  );
+
+  CREATE TABLE translation (
+    sentence_id     INTEGER NOT NULL REFERENCES sentence(id),
+    translation_id  INTEGER NOT NULL REFERENCES sentence(id),
+    PRIMARY KEY (sentence_id, translation_id)
+  );
+  `)
 
   const db = sqlite3('assets/sentence.db')
   const items: any[] = []
 
-  const push = (ss: any) => SentenceModel.insertMany(ss)
+  const pushSentence = (rs: any[]) => {
+    const insert = newDb.prepare(/*sql*/`
+    INSERT INTO sentence (id, [text], lang, tags)
+    VALUES (@id, @text, @lang, @tags)
+    `)
+    const insertMany = newDb.transaction(() => {
+      for (const { id, text, lang, tags } of rs) {
+        insert.run({ id, text, lang, tags })
+      }
+    })
+    insertMany()
+  }
 
-  for (const { id: tatoebaId, text, lang, translationIds: transJSON, tags: tagsJSON } of db.prepare(/*sql*/`
+  for (const { id, text, lang, translationIds: transJSON, tags } of db.prepare(/*sql*/`
   SELECT id, [text], lang, translationIds, tags FROM sentence
   `).iterate()) {
     const tids = JSON.parse(transJSON)
-    const tags = JSON.parse(tagsJSON)
 
     const r = db.prepare(/*sql*/`
     SELECT id, [text] FROM sentence
@@ -27,9 +44,8 @@ async function main () {
     `).all([...tids, lang]) || {}
 
     if (r.length > 0) {
-      console.log(text, r.map((r0) => r0.text))
       items.push({
-        tatoebaId,
+        id,
         text,
         lang,
         translationIds: r.map((r0) => r0.id),
@@ -38,16 +54,28 @@ async function main () {
 
       if (items.length > 1000) {
         const ss = items.splice(0, 1000)
-        await push(ss)
+        pushSentence(ss)
       }
     }
   }
 
-  await push(items)
+  pushSentence(items)
+
+  const insert = newDb.prepare(/*sql*/`
+  INSERT INTO translation (sentence_id, translation_id)
+  VALUES (@id, @translation_id)
+  `)
+  newDb.transaction(() => {
+    items.map((it) => {
+      it.translationIds.map((translation_id: number) => {
+        insert.run({ id: it.id, translation_id })
+      })
+    })
+  })
 
   db.close()
 
-  mongoose.disconnect()
+  newDb.close()
 }
 
 if (require.main === module) {

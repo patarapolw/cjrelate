@@ -1,19 +1,21 @@
 import sqlite3 from 'better-sqlite3'
 
 async function main () {
-  const newDb = sqlite3('assets/radical.db')
+  const newDb = sqlite3('assets/cedict.db')
   newDb.exec(/*sql*/`
-  CREATE TABLE radical (
-    [entry] TEXT NOT NULL UNIQUE,
-    sub     TEXT,
-    sup     TEXT,
-    [var]   TEXT
+  CREATE TABLE vocab (
+    simplified  TEXT NOT NULL,
+    traditional TEXT,
+    pinyin      TEXT NOT NULL,
+    english     TEXT NOT NULL,
+    rating      REAL,
+    UNIQUE (simplified, traditional, pinyin)
   )
   `)
 
   const insert = newDb.prepare(/*sql*/`
-  INSERT INTO radical ([entry], sub, sup, [var])
-  VALUES (@entry, @sub, @sup, @var)
+  INSERT INTO vocab (simplified, traditional, pinyin, english)
+  VALUES (@simplified, @traditional, @pinyin, @english)
   `)
   const insertMany = newDb.transaction((rs: any[]) => {
     for (const r of rs) {
@@ -26,12 +28,8 @@ async function main () {
   let i = 0
 
   for (const r of db.prepare(/*sql*/`
-  SELECT [entry], sub, sup, [var] FROM token
+  SELECT simplified, traditional, pinyin, english FROM vocab
   `).iterate()) {
-    if (!r.sub && !r.sup && !r.var) {
-      continue
-    }
-
     ss.push(r)
 
     if (ss.length > 1000) {
